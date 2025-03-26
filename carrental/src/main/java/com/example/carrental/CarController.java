@@ -1,7 +1,6 @@
 package com.example.carrental;
 
 import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +16,13 @@ public class CarController {
         cars.add(new Car("22BB33", "Toyota", 50));
     }
 
-    // Lister les voitures non louées
+    // 1. Nouveau endpoint pour le service "newcarservice"
+    @GetMapping("/newcarservice")
+    public String newCarService() {
+        return "New car service is active!"; // Message de test
+    }
+
+    // 2. Lister les voitures non louées (existant)
     @GetMapping
     public List<Car> listOfCars() {
         List<Car> availableCars = new ArrayList<>();
@@ -29,7 +34,7 @@ public class CarController {
         return availableCars;
     }
 
-    // Obtenir une voiture spécifique par son numéro de plaque
+    // 3. Obtenir une voiture par sa plaque (existant)
     @GetMapping("/{plateNumber}")
     public Car aCar(@PathVariable("plateNumber") String plateNumber) {
         for (Car car : cars) {
@@ -37,31 +42,22 @@ public class CarController {
                 return car;
             }
         }
-        return null; // Voiture non trouvée
+        return null;
     }
 
-    // Louer ou rendre une voiture
+    // 4. Louer/rendre une voiture (existant)
     @PutMapping("/{plateNumber}")
     public Car rentOrGetBack(
             @PathVariable("plateNumber") String plateNumber,
             @RequestParam(value = "rent") boolean rent) {
-
         for (Car car : cars) {
             if (car.getPlateNumber().equals(plateNumber)) {
-                if (rent) {
-                    // Louer la voiture
-                    car.setRented(true);
-                } else {
-                    // Rendre la voiture
-                    car.setRented(false);
-                }
-                return car; // Retourne la voiture mise à jour
+                car.setRented(rent);
+                return car;
             }
         }
-        return null; // Si la voiture n'est pas trouvée
+        return null;
     }
-
-    // Classe interne pour les dates de location (si nécessaire pour un futur ajout)
     public static class RentalDates {
         private String begin;
         private String end;
