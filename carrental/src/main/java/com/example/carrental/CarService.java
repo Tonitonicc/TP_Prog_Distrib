@@ -1,25 +1,20 @@
 package com.example.carrental;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Service
 public class CarService {
 
-    private final List<Car> cars;
+    private final CarRepository carRepository;
 
-    public CarService() {
-        // Initialisation avec les mêmes données que CarController
-        this.cars = List.of(
-                new Car("11AA22", "Ferrari", 100),
-                new Car("22BB33", "Toyota", 50)
-        );
+    @Autowired
+    public CarService(CarRepository carRepository) {
+        this.carRepository = carRepository;
     }
 
-    // Nouvelle méthode pour ton service
     public List<Car> getAvailableCars() {
-        return cars.stream()
-                .filter(car -> !car.isRented())
-                .toList();
+        return carRepository.findByRentedFalse();
     }
 }

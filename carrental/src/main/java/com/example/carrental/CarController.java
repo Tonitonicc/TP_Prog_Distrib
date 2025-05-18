@@ -1,63 +1,65 @@
 package com.example.carrental;
 
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/cars")
+@RequestMapping("/api")
 public class CarController {
+    private static final Logger logger = LoggerFactory.getLogger(CarController.class);
 
-    private List<Car> cars = new ArrayList<>();
+    private final CarRepository carRepository;
 
-    public CarController() {
-        // Exemple de voitures initiales
-        cars.add(new Car("11AA22", "Ferrari", 100));
-        cars.add(new Car("22BB33", "Toyota", 50));
+    @Autowired
+    public CarController(CarRepository carRepository) {
+        this.carRepository = carRepository;
+        initializeDatabase();
     }
 
-    // 1. Nouveau endpoint pour le service "newcarservice"
-    @GetMapping("/newcarservice")
+    private void initializeDatabase() {
+        if (carRepository.count() == 0) {
+            carRepository.save(new Car("11AA22", "Ferrari", 100));
+            carRepository.save(new Car("22BB33", "Toyota", 50));
+            logger.info("Database initialized with sample cars");
+        }
+    }
+
+    // Health Check pour Kubernetes
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("OK");
+    }
+
+    @GetMapping("/cars/newcarservice")
     public String newCarService() {
-        return "New car service is active!"; // Message de test
+        return "New car service is active!";
     }
 
-    // 2. Lister les voitures non louées (existant)
-    @GetMapping
+    @GetMapping("/cars")
     public List<Car> listOfCars() {
-        List<Car> availableCars = new ArrayList<>();
-        for (Car car : cars) {
-            if (!car.isRented()) {
-                availableCars.add(car);
-            }
-        }
-        return availableCars;
+        return carRepository.findByRentedFalse();
     }
 
-    // 3. Obtenir une voiture par sa plaque (existant)
-    @GetMapping("/{plateNumber}")
-    public Car aCar(@PathVariable("plateNumber") String plateNumber) {
-        for (Car car : cars) {
-            if (car.getPlateNumber().equals(plateNumber)) {
-                return car;
-            }
-        }
-        return null;
+    @GetMapping("/cars/{plateNumber}")
+    public Car aCar(@PathVariable String plateNumber) {
+        return carRepository.findById(plateNumber).orElse(null);
     }
 
-    // 4. Louer/rendre une voiture (existant)
-    @PutMapping("/{plateNumber}")
-    public Car rentOrGetBack(
-            @PathVariable("plateNumber") String plateNumber,
-            @RequestParam(value = "rent") boolean rent) {
-        for (Car car : cars) {
-            if (car.getPlateNumber().equals(plateNumber)) {
-                car.setRented(rent);
-                return car;
-            }
-        }
-        return null;
+    @PutMapping("/cars/{plateNumber}")
+    public Car rentOrGetBack(@PathVariable String plateNumber,
+                             @RequestParam boolean rent) {
+        return carRepository.findById(plateNumber)
+                .map(car -> {
+                    car.setRented(rent);
+                    return carRepository.save(car);
+                })
+                .orElse(null);
     }
+
     public static class RentalDates {
         private String begin;
         private String end;
